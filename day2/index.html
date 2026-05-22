@@ -77,13 +77,13 @@
 
         // 각 문장마다 고유 색상 (현재 문장용)
         const colors = [
-            { text: '#e0f2fe', glow: 'rgba(224, 242, 254, 0.7)' },   // 하늘
-            { text: '#a5f3fc', glow: 'rgba(165, 243, 252, 0.7)' },   // 시안
-            { text: '#c4b5fd', glow: 'rgba(196, 181, 253, 0.7)' },   // 보라
-            { text: '#86efac', glow: 'rgba(134, 239, 172, 0.7)' },   // 초록
-            { text: '#fde68a', glow: 'rgba(253, 230, 138, 0.7)' },   // 노랑
-            { text: '#fdba74', glow: 'rgba(253, 186, 116, 0.7)' },   // 오렌지
-            { text: '#f9a8d4', glow: 'rgba(249, 168, 212, 0.7)' },   // 핑크
+            { text: '#0284c7', glow: 'rgba(2, 132, 199, 0.15)' },   // 하늘
+            { text: '#0891b2', glow: 'rgba(8, 145, 178, 0.15)' },   // 시안
+            { text: '#6d28d9', glow: 'rgba(109, 40, 217, 0.15)' },   // 보라
+            { text: '#16a34a', glow: 'rgba(22, 163, 74, 0.15)' },   // 초록
+            { text: '#ca8a04', glow: 'rgba(202, 138, 4, 0.15)' },   // 노랑
+            { text: '#ea580c', glow: 'rgba(234, 88, 12, 0.15)' },   // 오렌지
+            { text: '#db2777', glow: 'rgba(219, 39, 119, 0.15)' },   // 핑크
         ];
 
         // 버튼·미리보기용 배경/글씨 색 (다음 문장 색과 동일)
@@ -103,7 +103,7 @@
             const h1 = document.getElementById('sentence');
             const c = colors[index];
             h1.style.color = c.text;
-            h1.style.textShadow = `0 0 20px ${c.glow}, 0 0 40px ${c.glow}`;
+            h1.style.textShadow = `0 2px 10px ${c.glow}`;
         }
 
         function applyNextColor(nextIndex) {

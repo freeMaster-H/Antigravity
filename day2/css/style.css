@@ -5,10 +5,9 @@ body, html {
     margin: 0;
     display: flex;
     flex-direction: column;
-    background-color: #0f172a;
-    background-image: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
+    background-color: #ffffff;
     font-family: 'Plus Jakarta Sans', 'Noto Sans KR', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    color: #f8fafc;
+    color: #334155;
 }
 
 header {
@@ -51,19 +50,19 @@ header nav a:hover {
 main {
     flex: 1;
     display: flex;
-    justify-content: center;
-    align-items: flex-start;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
     padding: 3rem 2rem;
     gap: 4rem;
-    max-width: 1200px;
+    max-width: 800px;
     margin: 0 auto;
     width: 100%;
     box-sizing: border-box;
 }
 
 .section-container {
-    flex: 1;
-    min-width: 320px;
+    width: 100%;
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
@@ -72,7 +71,7 @@ main {
 .section-title {
     font-size: 1.4rem;
     font-weight: 700;
-    color: #60a5fa;
+    color: #1e3a8a;
     margin: 0 0 0.5rem 0;
     letter-spacing: -0.01em;
     border-left: 4px solid #3b82f6;
@@ -91,19 +90,19 @@ main {
     display: flex;
     align-items: center;
     gap: 1.25rem;
-    background-color: rgba(240, 248, 255, 0.04);
-    border: 1px solid rgba(240, 248, 255, 0.12);
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
     border-radius: 1.5rem;
     padding: 1.5rem;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
     backdrop-filter: blur(8px);
-    transition: transform 0.3s ease, border-color 0.3s ease;
+    transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 .review-card:hover {
     transform: translateY(-4px);
     border-color: #fb923c;
-    box-shadow: 0 12px 40px rgba(251, 146, 60, 0.15), 0 8px 32px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 10px 15px -3px rgba(251, 146, 60, 0.15), 0 4px 6px -2px rgba(251, 146, 60, 0.08);
 }
 
 .profile-img {
@@ -111,17 +110,17 @@ main {
     height: 64px;
     border-radius: 50%;
     object-fit: cover;
-    border: 2px solid rgba(255, 255, 255, 0.25);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    border: 2px solid #e2e8f0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     flex-shrink: 0;
     transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 .review-card:hover .profile-img,
 .profile-img:hover {
-    border-color: rgba(255, 255, 255, 0.85);
+    border-color: #fb923c;
     transform: scale(1.05);
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 6px 16px rgba(251, 146, 60, 0.2);
 }
 
 .review-content {
@@ -140,7 +139,7 @@ main {
 .user-name {
     font-weight: 700;
     font-size: 1.05rem;
-    color: #f1f5f9;
+    color: #0f172a;
 }
 
 .user-rating {
@@ -153,29 +152,25 @@ main {
     margin: 0;
     font-size: 0.95rem;
     line-height: 1.5;
-    color: #cbd5e1;
+    color: #475569;
     font-style: italic;
     text-align: left;
 }
 
-@media (max-width: 868px) {
+@media (max-width: 640px) {
     main {
-        flex-direction: column;
-        align-items: center;
-        gap: 4rem;
-    }
-    .section-container {
-        width: 100%;
+        padding: 2rem 1rem;
+        gap: 3rem;
     }
 }
 
 footer {
-    background-color: #1e293b;
-    color: #94a3b8;
+    background-color: #f8fafc;
+    color: #64748b;
     padding: 2.5rem 2rem;
     text-align: right;
     font-size: 1.1rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    border-top: 1px solid #e2e8f0;
     letter-spacing: 0.05em;
     font-weight: 500;
 }
@@ -194,10 +189,10 @@ footer {
     text-align: center;
     margin: 0;
     padding: 2.5rem 3.5rem;
-    background-color: rgba(240, 248, 255, 0.06);
-    border: 1px solid rgba(240, 248, 255, 0.18);
+    background-color: #ffffff;
+    border: 1px solid #e2e8f0;
     border-radius: 2.5rem;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 0 30px rgba(240, 248, 255, 0.03);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
     backdrop-filter: blur(12px);
     transition: opacity 0.4s ease, color 0.4s ease, text-shadow 0.4s ease;
     line-height: 1.4;
