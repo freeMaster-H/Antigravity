@@ -1,8 +1,10 @@
 document.addEventListener('DOMContentLoaded', () => {
-  // --- State & Config ---
+  // --- Config ---
+  // 구글 스프레드시트의 [확장 프로그램] > [Apps Script]에 코드를 붙여넣고 웹 앱으로 배포한 URL을 여기에 입력하세요.
+  const APPS_SCRIPT_URL = ''; 
   const SHEET_URL = 'https://docs.google.com/spreadsheets/d/17_TaBM8R56Bk0HgDWYw3oxtWooS8R2hMrWLtMgjAQl4/export?format=csv';
+  
   const MENU_KEYS = ['bibimbap', 'donkatsu', 'gukbap', 'salad'];
-
   const MENU_DETAILS = {
     bibimbap: { name: '비빔밥', emoji: '🍲', class: 'bibimbap' },
     donkatsu: { name: '돈까스', emoji: '🥩', class: 'donkatsu' },
@@ -10,10 +12,14 @@ document.addEventListener('DOMContentLoaded', () => {
     salad: { name: '샐러드', emoji: '🥗', class: 'salad' }
   };
 
+  // --- State Management ---
   let votes = { bibimbap: 0, donkatsu: 0, gukbap: 0, salad: 0 };
-  let userVote = localStorage.getItem('user_lunch_vote') || null;
   let selectedMenu = null;
   let lastFeedSignature = "";
+  
+  // Local cache to keep track of user votes cast in this session before they appear in the sheet
+  let localSessionFeed = [];
+  let sheetFeedCache = [];
 
   // --- DOM Elements ---
   const menuCards = document.querySelectorAll('.menu-card');
@@ -48,42 +54,33 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // --- Initial Rendering & Polling ---
-  // Load initial data from Google Sheet
-  fetchSheetData(true);
+  // Pre-fill nickname if saved previously
+  const savedName = localStorage.getItem('user_lunch_name');
+  if (savedName) {
+    usernameInput.value = savedName;
+  }
 
+  // --- Initial Data Loading & Polling ---
+  fetchSheetData(true);
+  
   // Poll the sheet every 5 seconds for real-time updates
   const pollingInterval = setInterval(() => {
     fetchSheetData(false);
   }, 5000);
 
-  // If user has already voted, reflect selection in UI
-  if (userVote) {
-    selectedMenu = userVote;
-    const card = document.querySelector(`.menu-card[data-menu="${userVote}"]`);
-    if (card) card.classList.add('selected');
-
-    const savedName = localStorage.getItem('user_lunch_name');
-    if (savedName) usernameInput.value = savedName;
-
-    updateVoteButtonState(true);
-  }
-
   // --- Event Listeners ---
   menuCards.forEach(card => {
     card.addEventListener('click', () => {
-      if (userVote) {
-        showTemporaryAlert('이미 투표 완료되었습니다! 내일 다시 참여해 주세요.');
-        return;
-      }
-
       const menu = card.getAttribute('data-menu');
-      menuCards.forEach(c => c.classList.remove('selected'));
-
+      
       if (selectedMenu === menu) {
+        // Deselect
         selectedMenu = null;
+        card.classList.remove('selected');
         voteBtn.disabled = true;
       } else {
+        // Select
+        menuCards.forEach(c => c.classList.remove('selected'));
         selectedMenu = menu;
         card.classList.add('selected');
         voteBtn.disabled = false;
@@ -91,24 +88,82 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  voteBtn.addEventListener('click', () => {
-    if (!selectedMenu || userVote) return;
+  voteBtn.addEventListener('click', async () => {
+    if (!selectedMenu) return;
 
     const nickname = usernameInput.value.trim() || '익명';
-
-    // Save locally
-    userVote = selectedMenu;
-    localStorage.setItem('user_lunch_vote', selectedMenu);
     localStorage.setItem('user_lunch_name', nickname);
 
-    // Visual updates
-    triggerConfetti();
-    updateVoteButtonState(true);
-    showTemporaryAlert('🎉 투표해 주셔서 감사합니다! 결과가 반영되었습니다.');
+    const votedMenu = selectedMenu;
 
-    // Fetch immediately to merge user vote and redraw
-    fetchSheetData(false);
+    // Enter Loading State
+    setVoteButtonLoading(true);
+
+    // 1. Instantly update UI locally for responsive feedback
+    votes[votedMenu]++;
+    updateResultsUI();
+    triggerConfetti();
+
+    // 2. Add to local session feed
+    localSessionFeed.unshift({
+      name: nickname,
+      menuKey: votedMenu,
+      time: '방금 전'
+    });
+    renderFeed(sheetFeedCache);
+
+    // 3. Clear card selection state
+    menuCards.forEach(c => c.classList.remove('selected'));
+    selectedMenu = null;
+
+    // Check if Google Apps Script URL is configured
+    if (APPS_SCRIPT_URL && APPS_SCRIPT_URL !== 'YOUR_APPS_SCRIPT_URL') {
+      try {
+        // Send request to Apps Script Web App
+        await fetch(APPS_SCRIPT_URL, {
+          method: 'POST',
+          mode: 'no-cors', // Bypass CORS redirects
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ menu: votedMenu, voter: nickname })
+        });
+
+        showTemporaryAlert('🎉 투표가 구글 시트에 저장되었습니다!');
+        
+        // Immediate fetch to catch up
+        setTimeout(() => {
+          fetchSheetData(false);
+        }, 1500);
+
+      } catch (error) {
+        console.error('Error writing to Google Sheet:', error);
+        showTemporaryAlert('⚠️ 시트 전송 실패. 네트워크 상태를 확인하세요.');
+      } finally {
+        setVoteButtonLoading(false);
+      }
+    } else {
+      // Local Fallback Mode (No Apps Script configured)
+      printSetupInstructions();
+      showTemporaryAlert('💡 로컬 테스트 완료! (구글 시트 저장 가이드는 콘솔을 참조하세요)');
+      setVoteButtonLoading(false);
+    }
   });
+
+  // --- Setup Loading States ---
+  function setVoteButtonLoading(isLoading) {
+    if (isLoading) {
+      voteBtn.disabled = true;
+      voteBtn.innerHTML = '<span>전송 중...</span><span class="btn-pulse"></span>';
+      usernameInput.disabled = true;
+      menuCards.forEach(c => c.style.pointerEvents = 'none');
+    } else {
+      voteBtn.disabled = true; // Wait until next selection
+      voteBtn.innerHTML = '<span>투표하기</span>';
+      usernameInput.disabled = false;
+      menuCards.forEach(c => c.style.pointerEvents = 'auto');
+    }
+  }
 
   // --- CSV Parser ---
   function parseCSV(text) {
@@ -117,7 +172,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const feedItems = [];
 
     if (lines.length <= 1) return { votes: parsedVotes, feed: feedItems };
-
+    
     // Extract headers
     const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/^["']|["']$/g, ''));
     const menuIdx = headers.indexOf('menu');
@@ -162,23 +217,26 @@ document.addEventListener('DOMContentLoaded', () => {
   // --- Fetch Sheet Data ---
   async function fetchSheetData(isInitial = false) {
     try {
-      // Add a timestamp parameter to prevent cache
       const response = await fetch(`${SHEET_URL}&t=${Date.now()}`);
       if (!response.ok) throw new Error('Sheet data fetch failed');
       const text = await response.text();
-
+      
       const parsed = parseCSV(text);
 
-      // Merge user vote locally if they have voted (adds +1 to the local tally)
-      if (userVote) {
-        parsed.votes[userVote] = (parsed.votes[userVote] || 0) + 1;
-      }
-
-      votes = parsed.votes;
+      // Smart Merge Tally: Update local counts with sheet counts only if the sheet counts are larger.
+      // This prevents local user clicks from vanishing while Google Sheets CSV cache is updating.
+      MENU_KEYS.forEach(key => {
+        if (parsed.votes[key] > votes[key] || isInitial) {
+          votes[key] = parsed.votes[key];
+        }
+      });
+      
       updateResultsUI();
 
-      // Render Feed if signature changed (new entries)
-      const feedSignature = JSON.stringify(parsed.feed) + (userVote ? `_user_${userVote}` : '');
+      sheetFeedCache = parsed.feed;
+
+      // Render Feed if signature changed
+      const feedSignature = JSON.stringify(parsed.feed) + `_local_${localSessionFeed.length}`;
       if (feedSignature !== lastFeedSignature) {
         lastFeedSignature = feedSignature;
         renderFeed(parsed.feed);
@@ -187,20 +245,8 @@ document.addEventListener('DOMContentLoaded', () => {
       console.error('Error loading Google Sheet data:', error);
       if (isInitial) {
         showTemporaryAlert('구글 시트 투표 정보를 가져오지 못했습니다.');
-        updateResultsUI(); // Show zeros or defaults
+        updateResultsUI();
       }
-    }
-  }
-
-  // --- Helper Functions ---
-
-  function updateVoteButtonState(voted) {
-    if (voted) {
-      voteBtn.disabled = true;
-      voteBtn.innerHTML = '<span>투표 완료 ✓</span>';
-      voteBtn.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
-      voteBtn.style.boxShadow = '0 10px 25px -5px rgba(130, 165, 153, 0.4)';
-      usernameInput.disabled = true;
     }
   }
 
@@ -211,12 +257,10 @@ document.addEventListener('DOMContentLoaded', () => {
     MENU_KEYS.forEach(key => {
       const count = votes[key] || 0;
       const percentage = total > 0 ? Math.round((count / total) * 100) : 0;
-
-      // Update text values
+      
       document.getElementById(`count-${key}`).textContent = `(${count}표)`;
       document.getElementById(`percent-${key}`).textContent = `${percentage}%`;
-
-      // Update progress bar width
+      
       const bar = document.getElementById(`bar-${key}`);
       bar.style.width = `${percentage}%`;
     });
@@ -226,24 +270,27 @@ document.addEventListener('DOMContentLoaded', () => {
     feedContainer.innerHTML = '';
     const displayFeed = [];
 
-    // 1. If user voted locally, add their vote to the top
-    if (userVote) {
-      const savedName = localStorage.getItem('user_lunch_name') || '익명';
-      displayFeed.push({
-        name: savedName,
-        menuKey: userVote,
-        time: '방금 전'
-      });
-    }
+    // 1. Add user's instant session votes
+    localSessionFeed.forEach(item => {
+      displayFeed.push(item);
+    });
 
     // 2. Add sheet feed in reverse order (most recent first)
     const reversedFeed = [...sheetFeed].reverse();
     reversedFeed.forEach(item => {
+      // De-duplicate: If the sheet has now registered a vote from our localSessionFeed, remove it from localSessionFeed
+      const duplicateIdx = localSessionFeed.findIndex(
+        l => l.name === item.name && l.menuKey === item.menuKey
+      );
+      if (duplicateIdx !== -1) {
+        localSessionFeed.splice(duplicateIdx, 1);
+      }
+
       let timeText = '방금 전';
       if (item.time) {
-        // Extract time from YYYY-MM-DD HH:MM:SS or display as is
         timeText = item.time.includes(' ') ? item.time.split(' ')[1] : item.time;
       }
+
       displayFeed.push({
         name: item.name,
         menuKey: item.menuKey,
@@ -268,7 +315,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const feedItem = document.createElement('div');
       feedItem.className = 'feed-item';
-
+      
       const firstChar = item.name.charAt(0);
 
       feedItem.innerHTML = `
@@ -290,30 +337,30 @@ document.addEventListener('DOMContentLoaded', () => {
   function triggerConfetti() {
     const colors = ['#4f46e5', '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#ec4899'];
     const particleCount = 70;
-
+    
     for (let i = 0; i < particleCount; i++) {
       const confetti = document.createElement('div');
       confetti.className = 'confetti';
-
+      
       const color = colors[Math.floor(Math.random() * colors.length)];
       const left = Math.random() * 100;
       const size = Math.floor(Math.random() * 8) + 6;
       const duration = (Math.random() * 2) + 2;
       const delay = Math.random() * 0.4;
-
+      
       confetti.style.backgroundColor = color;
       confetti.style.left = `${left}%`;
       confetti.style.width = `${size}px`;
       confetti.style.height = `${size}px`;
       confetti.style.animationDuration = `${duration}s`;
       confetti.style.animationDelay = `${delay}s`;
-
+      
       if (Math.random() > 0.5) {
         confetti.style.borderRadius = '50%';
       }
-
+      
       document.body.appendChild(confetti);
-
+      
       setTimeout(() => {
         confetti.remove();
       }, (duration + delay) * 1000);
@@ -354,5 +401,56 @@ document.addEventListener('DOMContentLoaded', () => {
         toast.remove();
       }, 300);
     }, 3000);
+  }
+
+  // --- Console Guide Printer ---
+  function printSetupInstructions() {
+    console.log(
+      `%c🛠️ Google Sheets Write API 설정 방법 🛠️`,
+      'color: #4f46e5; font-size: 16px; font-weight: bold; padding: 4px;'
+    );
+    console.log(
+      `1. 구글 시트 웹페이지로 이동 후, 상단 메뉴에서 [확장 프로그램] > [Apps Script]를 클릭합니다.\n` +
+      `2. 열린 코드 에디터의 기존 내용을 모두 지우고 아래의 코드를 붙여넣습니다:\n\n` +
+      `--------------------------------------------------\n` +
+      `function doPost(e) {\n` +
+      `  try {\n` +
+      `    var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();\n` +
+      `    var data = JSON.parse(e.postData.contents);\n` +
+      `    \n` +
+      `    var timestamp = new Date();\n` +
+      `    var menu = data.menu || "unknown";\n` +
+      `    var voter = data.voter || "익명";\n` +
+      `    \n` +
+      `    var menuMap = {\n` +
+      `      "bibimbap": "비빔밥",\n` +
+      `      "donkatsu": "돈까스",\n` +
+      `      "gukbap": "국밥",\n` +
+      `      "salad": "샐러드"\n` +
+      `    };\n` +
+      `    var menuName = menuMap[menu] || menu;\n` +
+      `    \n` +
+      `    sheet.appendRow([timestamp, menuName, voter]);\n` +
+      `    \n` +
+      `    return ContentService.createTextOutput(JSON.stringify({ result: "success" }))\n` +
+      `      .setMimeType(ContentService.MimeType.JSON)\n` +
+      `      .setHeader("Access-Control-Allow-Origin", "*");\n` +
+      `  } catch (error) {\n` +
+      `    return ContentService.createTextOutput(JSON.stringify({ result: "error", message: error.toString() }))\n` +
+      `      .setMimeType(ContentService.MimeType.JSON)\n` +
+      `      .setHeader("Access-Control-Allow-Origin", "*");\n` +
+      `  }\n` +
+      `}\n` +
+      `--------------------------------------------------\n\n` +
+      `3. 우측 상단의 [배포] > [새 배포]를 클릭합니다.\n` +
+      `4. 유형 선택(톱니바퀴)에서 [웹 앱]을 선택합니다.\n` +
+      `5. 설정을 다음과 같이 구성합니다:\n` +
+      `   - 설명: 점심 투표 API\n` +
+      `   - 다음 사용자 권한으로 실행: 나 (본인의 구글 계정)\n` +
+      `   - 액세스 권한이 있는 사용자: 모든 사용자 (Anyone)\n` +
+      `6. [배포] 버튼을 누르고, 액세스 승인(Authorize Access) 창이 나오면 본인 계정 선택 및 [Advanced] > [Go to Untitled project (unsafe)] 클릭 후 [Allow]를 눌러 승인합니다.\n` +
+      `7. 배포 완료 후 화면에 표시된 [웹 앱 URL]을 복사합니다.\n` +
+      `8. day3/js/app.js 파일 맨 위의 APPS_SCRIPT_URL 상수에 해당 URL을 붙여넣으세요.`
+    );
   }
 });
