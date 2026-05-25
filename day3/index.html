@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>실시간 점심 메뉴 투표 | Lunch Decision Hub</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- Header -->
+  <header>
+    <div class="brand">
+      <div class="brand-icon">🗳️</div>
+      <h1>점심 투표 <span>Live</span></h1>
+    </div>
+    <button class="theme-toggle-btn" id="theme-toggle" aria-label="Toggle dark mode">
+      <span class="theme-icon">☀️</span>
+      <span class="theme-text">라이트 모드</span>
+    </button>
+  </header>
+
+  <!-- Main Container -->
+  <main class="app-container">
+    
+    <!-- Left Panel: Voting Screen -->
+    <section class="panel" id="voting-panel">
+      <h2 class="panel-title">오늘의 메뉴 선택 <span class="badge">VOTE</span></h2>
+      
+      <!-- Grid of 4 Menus -->
+      <div class="vote-grid">
+        <!-- Bibimbap -->
+        <div class="menu-card bibimbap" data-menu="bibimbap">
+          <div class="menu-header-row">
+            <div class="menu-emoji-wrapper">🍲</div>
+            <div class="menu-select-indicator"></div>
+          </div>
+          <div class="menu-info">
+            <h3 class="menu-name">비빔밥</h3>
+            <p class="menu-desc">신선한 채소와 고소한 참기름이 어우러진 웰빙 식사</p>
+            <span class="menu-tag">약 560 kcal</span>
+          </div>
+        </div>
+
+        <!-- Pork Cutlet -->
+        <div class="menu-card donkatsu" data-menu="donkatsu">
+          <div class="menu-header-row">
+            <div class="menu-emoji-wrapper">🥩</div>
+            <div class="menu-select-indicator"></div>
+          </div>
+          <div class="menu-info">
+            <h3 class="menu-name">돈까스</h3>
+            <p class="menu-desc">겉은 바삭하고 속은 촉촉한 일식 등심 돈카츠</p>
+            <span class="menu-tag">약 780 kcal</span>
+          </div>
+        </div>
+
+        <!-- Gukbap -->
+        <div class="menu-card gukbap" data-menu="gukbap">
+          <div class="menu-header-row">
+            <div class="menu-emoji-wrapper">🥣</div>
+            <div class="menu-select-indicator"></div>
+          </div>
+          <div class="menu-info">
+            <h3 class="menu-name">국밥</h3>
+            <p class="menu-desc">진한 사골 육수에 고기를 듬뿍 담은 든든한 국밥</p>
+            <span class="menu-tag">약 620 kcal</span>
+          </div>
+        </div>
+
+        <!-- Salad -->
+        <div class="menu-card salad" data-menu="salad">
+          <div class="menu-header-row">
+            <div class="menu-emoji-wrapper">🥗</div>
+            <div class="menu-select-indicator"></div>
+          </div>
+          <div class="menu-info">
+            <h3 class="menu-name">샐러드</h3>
+            <p class="menu-desc">아보카도와 닭가슴살을 얹은 가볍고 상큼한 건강식</p>
+            <span class="menu-tag">약 350 kcal</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Inputs -->
+      <div class="vote-action-container">
+        <div class="user-name-input-wrapper">
+          <label for="username">닉네임</label>
+          <input type="text" id="username" class="user-name-input" placeholder="닉네임을 입력하세요 (미입력시 익명)" maxlength="10">
+        </div>
+        <button id="vote-btn" class="vote-submit-btn" disabled>
+          <span>투표하기</span>
+          <span class="btn-pulse"></span>
+        </button>
+      </div>
+    </section>
+
+    <!-- Right Panel: Live Results Screen -->
+    <section class="panel" id="results-panel">
+      <h2 class="panel-title">투표 현황 <span class="badge" style="background-color: rgba(16, 185, 129, 0.1); color: #10b981;">LIVE</span></h2>
+      
+      <!-- Total Votes count -->
+      <div class="results-header-summary">
+        <span class="total-votes-label">전체 참여자</span>
+        <span class="total-votes-value" id="total-votes">0표</span>
+      </div>
+
+      <!-- Result Bars -->
+      <div class="results-list">
+        <!-- Bibimbap -->
+        <div class="result-row" id="result-bibimbap">
+          <div class="result-meta">
+            <div class="result-name-wrapper">
+              <span class="result-emoji">🍲</span>
+              <span class="result-menu-name">비빔밥</span>
+            </div>
+            <div class="result-stats">
+              <span class="result-percentage" id="percent-bibimbap">0%</span>
+              <span class="result-votes-count" id="count-bibimbap">(0표)</span>
+            </div>
+          </div>
+          <div class="progress-track">
+            <div class="progress-bar bibimbap" id="bar-bibimbap"></div>
+          </div>
+        </div>
+
+        <!-- Donkatsu -->
+        <div class="result-row" id="result-donkatsu">
+          <div class="result-meta">
+            <div class="result-name-wrapper">
+              <span class="result-emoji">🥩</span>
+              <span class="result-menu-name">돈까스</span>
+            </div>
+            <div class="result-stats">
+              <span class="result-percentage" id="percent-donkatsu">0%</span>
+              <span class="result-votes-count" id="count-donkatsu">(0표)</span>
+            </div>
+          </div>
+          <div class="progress-track">
+            <div class="progress-bar donkatsu" id="bar-donkatsu"></div>
+          </div>
+        </div>
+
+        <!-- Gukbap -->
+        <div class="result-row" id="result-gukbap">
+          <div class="result-meta">
+            <div class="result-name-wrapper">
+              <span class="result-emoji">🥣</span>
+              <span class="result-menu-name">국밥</span>
+            </div>
+            <div class="result-stats">
+              <span class="result-percentage" id="percent-gukbap">0%</span>
+              <span class="result-votes-count" id="count-gukbap">(0표)</span>
+            </div>
+          </div>
+          <div class="progress-track">
+            <div class="progress-bar gukbap" id="bar-gukbap"></div>
+          </div>
+        </div>
+
+        <!-- Salad -->
+        <div class="result-row" id="result-salad">
+          <div class="result-meta">
+            <div class="result-name-wrapper">
+              <span class="result-emoji">🥗</span>
+              <span class="result-menu-name">샐러드</span>
+            </div>
+            <div class="result-stats">
+              <span class="result-percentage" id="percent-salad">0%</span>
+              <span class="result-votes-count" id="count-salad">(0표)</span>
+            </div>
+          </div>
+          <div class="progress-track">
+            <div class="progress-bar salad" id="bar-salad"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Real-time Activity Feed -->
+      <div class="feed-header">
+        <div class="feed-title">
+          <div class="feed-title-dot"></div>
+          <span>실시간 투표 현황 피드</span>
+        </div>
+        <div class="activity-feed-container" id="feed-container">
+          <!-- Feed items will be inserted dynamically -->
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <p>© 2026 점심 투표 Live. Made beautifully with ❤️</p>
+  </footer>
+
+  <script src="js/app.js"></script>
+</body>
+</html>
