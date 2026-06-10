@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>오늘의 하루는 어땠나요? | AI 감정 일기장</title>
+  <meta name="description" content="음성 입력을 통해 편리하게 작성하고, 인공지능(AI)이 전하는 따뜻한 조언과 감정 분석 피드백을 받아보세요.">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- Header Section -->
+  <header>
+    <div class="brand" id="app-brand">
+      <span class="brand-emoji">🌙</span>
+      <h1>Mood <span>Log</span></h1>
+    </div>
+    <button class="theme-toggle-btn" id="theme-toggle" aria-label="Toggle theme">
+      <span class="theme-icon">☀️</span>
+      <span class="theme-text">라이트 모드</span>
+    </button>
+  </header>
+
+  <!-- Main Content Container -->
+  <main class="app-container">
+    <section class="panel active" id="diary-section">
+      <div class="diary-header">
+        <h1 class="main-title">오늘의 하루는 어땠나요?</h1>
+        <p class="main-description">오늘 있었던 일이나 지금 느끼는 감정을 적어보세요. 목소리로도 자유롭게 입력할 수 있습니다.</p>
+      </div>
+
+      <!-- Text Input Area -->
+      <div class="textarea-wrapper">
+        <textarea id="diary-input" placeholder="여기에 오늘의 이야기를 들려주세요. 감정에 집중해 솔직하게 작성할수록 더 따뜻한 분석을 받을 수 있어요..." aria-label="일기 입력창" maxlength="1000"></textarea>
+        <div class="textarea-footer">
+          <span class="speech-status" id="speech-status">
+            <span class="pulse-indicator" id="pulse-indicator"></span>
+            <span id="speech-status-text">마이크 비활성</span>
+          </span>
+          <span class="char-counter" id="char-count">0 / 1000</span>
+        </div>
+      </div>
+
+      <!-- Buttons Group -->
+      <div class="action-btn-group">
+        <button id="voice-input-btn" class="action-btn secondary-btn" aria-label="음성으로 입력하기">
+          <span class="btn-icon">🎙️</span>
+          <span class="btn-text">음성으로 입력하기</span>
+        </button>
+        <button id="analyze-btn" class="action-btn primary-btn" aria-label="분석 요청하기">
+          <span class="btn-icon">✨</span>
+          <span class="btn-text">분석 요청하기</span>
+        </button>
+      </div>
+
+      <!-- AI Feedback Box -->
+      <div class="ai-feedback-section">
+        <h3 class="feedback-subtitle">
+          <span class="sparkle-icon">🤖</span> AI 답변
+        </h3>
+        <div class="ai-response-box" id="ai-response-box">
+          <div class="response-placeholder" id="response-placeholder">여기에 AI 답변이 표시됩니다.</div>
+          
+          <!-- Loading Animation (Hidden initially) -->
+          <div class="response-loading" id="response-loading" style="display: none;">
+            <div class="loading-spinner"></div>
+            <p class="loading-text">일기에 담긴 감정을 AI가 분석하는 중입니다...</p>
+          </div>
+          
+          <!-- Output text element -->
+          <div class="response-text" id="response-text" style="display: none;"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer Section -->
+  <footer>
+    <p>© 2026 Mood Log. AI Emotion Diary. All rights reserved.</p>
+  </footer>
+
+  <script src="js/app.js"></script>
+</body>
+</html>
