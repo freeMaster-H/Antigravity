@@ -45,6 +45,21 @@ document.addEventListener('DOMContentLoaded', () => {
     charCountLabel.textContent = `${currentLength} / 1000`;
   });
 
+  // --- Restore Saved Diary and AI Response ---
+  const savedDiaryText = localStorage.getItem('moodlog_diary_text');
+  const savedAiResponse = localStorage.getItem('moodlog_ai_response');
+
+  if (savedDiaryText) {
+    diaryInput.value = savedDiaryText;
+    charCountLabel.textContent = `${savedDiaryText.length} / 1000`;
+  }
+
+  if (savedAiResponse) {
+    responsePlaceholder.style.display = 'none';
+    responseText.style.display = 'block';
+    responseText.textContent = savedAiResponse;
+  }
+
   // --- Speech Recognition (STT) Setup ---
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   let recognition = null;
@@ -230,25 +245,56 @@ document.addEventListener('DOMContentLoaded', () => {
       stopRecording();
     }
 
-    // 2. Simulated Delay (2.5 seconds)
-    setTimeout(() => {
-      // 3. Keyword based emotion analysis
-      const emotion = analyzeSentiment(textValue);
-      
-      // 4. Select random message from category
-      const responses = AI_RESPONSES[emotion] || AI_RESPONSES.calm;
-      const randomIndex = Math.floor(Math.random() * responses.length);
-      const selectedResponse = responses[randomIndex];
+    // 2. Request Gemini AI analysis from the server proxy
+    fetch('/api/analyze', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ text: textValue })
+    })
+    .then(function(res) {
+      if (!res.ok) {
+        return res.json().then(function(err) {
+          throw new Error(err.error || '서버 오류가 발생했습니다.');
+        }).catch(function() {
+          throw new Error('서버와의 통신이 원활하지 않습니다.');
+        });
+      }
+      return res.json();
+    })
+    .then(function(data) {
+      if (data.error) {
+        throw new Error(data.error);
+      }
 
-      // 5. Update UI (Hide loading, Typewrite response)
+      // 3. Update UI (Hide loading, Typewrite response)
       responseLoading.style.display = 'none';
       analyzeBtn.disabled = false;
       voiceInputBtn.disabled = false;
       
-      // Run Typing Effect
-      typeWriter(selectedResponse, responseText, 30);
+      // Save diary content and AI response to local storage
+      localStorage.setItem('moodlog_diary_text', textValue);
+      localStorage.setItem('moodlog_ai_response', data.response);
 
-    }, 2500);
+      // Run Typing Effect with real Gemini response
+      typeWriter(data.response, responseText, 30);
+    })
+    .catch(function(error) {
+      console.error('API Error:', error);
+      responseLoading.style.display = 'none';
+      analyzeBtn.disabled = false;
+      voiceInputBtn.disabled = false;
+      
+      // Show error message to user
+      var errorMsg = "분석 중 오류가 발생했습니다. ";
+      if (error.message.indexOf('GEMINI_API_KEY') !== -1) {
+        errorMsg += "서버에 'GEMINI_API_KEY' 환경 변수가 설정되어 있지 않습니다. 터미널에서 환경 변수를 설정하고 서버를 재시작해 주세요.";
+      } else {
+        errorMsg += "네트워크 연결 또는 API 키 상태를 확인해 주세요. (상세 오류: " + error.message + ")";
+      }
+      typeWriter(errorMsg, responseText, 30);
+    });
   });
 
   // Sentiment Helper Function
